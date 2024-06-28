@@ -92,7 +92,7 @@ async fn main() -> Result<(), JobSchedulerError> {
         .add(Job::new_async("0 */2 * * * *", move |_uuid, mut _l| {
             let runtime_handle = runtime_handle.clone();
             Box::pin(async move {
-                info!("I run async every 2 minutes");
+                //info!("I run async every 2 minutes");
                 watch_machines(runtime_handle).await;
             })
         })?)
