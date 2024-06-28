@@ -28,6 +28,7 @@ pub async fn send_message(
     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     message: &str,
 ) {
+    info!("send: {}", message);
     ws_stream
         .send(Message::Text(message.to_string()))
         .await
@@ -95,7 +96,7 @@ async fn process_scan(
         let message = serde_json::json!({
             "name": "scan_result",
             "data": converted,
-            "progress": (i as f32) / 26.0
+            "progress": (((i as f32) / 26.0) * 100.0) as i32
         });
 
         send_message(ws_stream, &message.to_string()).await;
