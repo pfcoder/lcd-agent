@@ -1,8 +1,12 @@
+use std::vec;
+
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 use lcd_core::error::MinerError;
+use lcd_core::miner::entry::PoolConfig;
 use log::error;
 use log::info;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 use tokio::net::TcpStream;
@@ -10,6 +14,13 @@ use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::WebSocketStream;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct BatchConfig {
+    ips: Vec<String>,
+    pools: Vec<PoolConfig>,
+    mode: String,
+}
 
 pub async fn connect_to_websocket(
     url: &str,
@@ -40,11 +51,21 @@ pub async fn receive_message(
     runtime_handle: &tokio::runtime::Handle,
 ) {
     loop {
-        let msg = ws_stream
-            .next()
-            .await
-            .expect("Failed to receive message")
-            .unwrap();
+        // if failed to receive message, return to reconnect
+        let msg = match ws_stream.next().await {
+            Some(Ok(msg)) => msg,
+            Some(Err(e)) => {
+                error!("Failed to receive message: {}", e);
+                return;
+            }
+            None => {
+                error!("Failed to receive message");
+                return;
+            }
+        };
+
+        //.expect("Failed to receive message")
+        //.unwrap();
         match msg {
             Message::Text(text) => {
                 info!("Received message: {}", text);
@@ -58,6 +79,44 @@ pub async fn receive_message(
                             error!("IP is empty");
                         } else {
                             process_scan(ws_stream, ip, runtime_handle).await;
+                        }
+                    }
+                    Some("config") => {
+                        info!("Received config command");
+                        let config = json["data"].as_str().unwrap_or("");
+                        if config.is_empty() {
+                            error!("Config is empty");
+                        } else {
+                            // convert config to json
+                            let batch_config: BatchConfig = serde_json::from_str(config).unwrap();
+                            info!("batch_config: {:?}", &batch_config);
+                            //process_config(ws_stream, &batch_config, runtime_handle).await;
+                        }
+                    }
+                    Some("query") => {
+                        info!("Received query command");
+                        let ip = json["data"].as_str().unwrap_or("");
+                        if ip.is_empty() {
+                            error!("IP is empty");
+                        } else {
+                            // query machine
+                            // use watching interface
+                            let ips = vec![ip.to_string()];
+                            let result = lcd_core::watching(runtime_handle.clone(), ips, 3)
+                                .await
+                                // ignore error
+                                .unwrap_or(vec![]);
+
+                            let message = serde_json::json!({
+                                "name": "query_result",
+                                "data": if result.len() > 0 {
+                                    serde_json::to_string(&result[0]).unwrap()
+                                } else {
+                                    "{}".to_string()
+                                }
+                            });
+
+                            send_message(ws_stream, &message.to_string()).await;
                         }
                     }
                     _ => {
@@ -101,4 +160,31 @@ async fn process_scan(
 
         send_message(ws_stream, &message.to_string()).await;
     }
+}
+
+async fn process_config(
+    ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+    batch_config: &BatchConfig,
+    runtime_handle: &tokio::runtime::Handle,
+) {
+    let result = lcd_core::config(
+        runtime_handle.clone(),
+        batch_config.ips.clone(),
+        batch_config.pools.clone(),
+        batch_config.mode.clone(),
+    )
+    .await
+    .unwrap();
+    info!("config result: {:?}", &result);
+    // construct json message
+
+    // convert result to json string
+    let converted = serde_json::to_string(&result).unwrap();
+
+    let message = serde_json::json!({
+        "name": "config_result",
+        "data": converted,
+    });
+
+    send_message(ws_stream, &message.to_string()).await;
 }
