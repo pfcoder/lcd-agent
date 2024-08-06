@@ -140,7 +140,7 @@ async fn process_scan(
     let count = 10;
     for i in 1..=26 {
         let start = (i - 1) * count;
-        let result = lcd_core::scan(runtime_handle.clone(), ip, start, 10, 3)
+        let result = lcd_core::scan(runtime_handle.clone(), ip, start, 10, 1)
             .await
             .unwrap();
         info!("scan result: {:?}", &result);
