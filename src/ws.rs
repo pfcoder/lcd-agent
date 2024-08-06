@@ -40,10 +40,7 @@ pub async fn send_message(
     message: &str,
 ) {
     info!("send: {}", message);
-    ws_stream
-        .send(Message::Text(message.to_string()))
-        .await
-        .expect("Failed to send message");
+    ws_stream.send(Message::Text(message.to_string())).await;
 }
 
 pub async fn receive_message(
