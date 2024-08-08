@@ -38,9 +38,12 @@ pub async fn connect_to_websocket(
 pub async fn send_message(
     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     message: &str,
-) {
+) -> Result<(), MinerError> {
     info!("send: {}", message);
-    ws_stream.send(Message::Text(message.to_string())).await;
+    ws_stream
+        .send(Message::Text(message.to_string()))
+        .await
+        .map_err(|e| MinerError::WebSocketError(e.to_string()))
 }
 
 pub async fn receive_message(
@@ -75,7 +78,13 @@ pub async fn receive_message(
                         if ip.is_empty() {
                             error!("IP is empty");
                         } else {
-                            process_scan(ws_stream, ip, runtime_handle).await;
+                            match process_scan(ws_stream, ip, runtime_handle).await {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    error!("Failed to process scan: {}", e);
+                                    return;
+                                }
+                            }
                         }
                     }
                     Some("config") => {
@@ -87,7 +96,13 @@ pub async fn receive_message(
                             // convert config to json
                             let batch_config: BatchConfig = serde_json::from_str(config).unwrap();
                             info!("batch_config: {:?}", &batch_config);
-                            //process_config(ws_stream, &batch_config, runtime_handle).await;
+                            match process_config(ws_stream, &batch_config, runtime_handle).await {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    error!("Failed to process config: {}", e);
+                                    return;
+                                }
+                            }
                         }
                     }
                     Some("query") => {
@@ -113,7 +128,13 @@ pub async fn receive_message(
                                 }
                             });
 
-                            send_message(ws_stream, &message.to_string()).await;
+                            match send_message(ws_stream, &message.to_string()).await {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    error!("Failed to send query result message: {}", e);
+                                    return;
+                                }
+                            }
                         }
                     }
                     _ => {
@@ -135,7 +156,7 @@ async fn process_scan(
     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     ip: &str,
     runtime_handle: &tokio::runtime::Handle,
-) {
+) -> Result<(), MinerError> {
     // go through ip range from 1 to 255, every time 10 machines
     let count = 10;
     for i in 1..=26 {
@@ -155,15 +176,17 @@ async fn process_scan(
             "progress": (((i as f32) / 26.0) * 100.0) as i32
         });
 
-        send_message(ws_stream, &message.to_string()).await;
+        send_message(ws_stream, &message.to_string()).await?;
     }
+
+    Ok(())
 }
 
 async fn process_config(
     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     batch_config: &BatchConfig,
     runtime_handle: &tokio::runtime::Handle,
-) {
+) -> Result<(), MinerError> {
     let result = lcd_core::config(
         runtime_handle.clone(),
         batch_config.ips.clone(),
@@ -183,5 +206,5 @@ async fn process_config(
         "data": converted,
     });
 
-    send_message(ws_stream, &message.to_string()).await;
+    send_message(ws_stream, &message.to_string()).await
 }
