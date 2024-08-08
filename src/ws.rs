@@ -39,7 +39,7 @@ pub async fn send_message(
     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     message: &str,
 ) -> Result<(), MinerError> {
-    info!("send: {}", message);
+    // info!("send: {}", message);
     ws_stream
         .send(Message::Text(message.to_string()))
         .await
@@ -164,7 +164,7 @@ async fn process_scan(
         let result = lcd_core::scan(runtime_handle.clone(), ip, start, 10, 1)
             .await
             .unwrap();
-        info!("scan result: {:?}", &result);
+        // info!("scan result: {:?}", &result);
         // construct json message
 
         // convert result to json string
