@@ -2,8 +2,6 @@ use std::vec;
 
 use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
-use lcd_core::error::MinerError;
-use lcd_core::miner::entry::PoolConfig;
 use log::error;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -15,22 +13,24 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::WebSocketStream;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct BatchConfig {
-    ips: Vec<String>,
-    pools: Vec<PoolConfig>,
-    mode: String,
-}
+use crate::error::AgentError;
+
+// #[derive(Serialize, Deserialize, Debug)]
+// struct BatchConfig {
+//     ips: Vec<String>,
+//     pools: Vec<PoolConfig>,
+//     mode: String,
+// }
 
 pub async fn connect_to_websocket(
     url: &str,
-) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, MinerError> {
+) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, AgentError> {
     //let (ws_stream, _) = connect_async(url).await.expect("Failed to connect");
     match connect_async(url).await {
         Ok((ws_stream, _)) => Ok(ws_stream),
         Err(e) => {
             error!("Failed to connect: {}", e);
-            Err(MinerError::WebSocketError(e.to_string()))
+            Err(AgentError::WebSocketError(e.to_string()))
         }
     }
 }
@@ -38,12 +38,12 @@ pub async fn connect_to_websocket(
 pub async fn send_message(
     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     message: &str,
-) -> Result<(), MinerError> {
+) -> Result<(), AgentError> {
     // info!("send: {}", message);
     ws_stream
         .send(Message::Text(message.to_string()))
         .await
-        .map_err(|e| MinerError::WebSocketError(e.to_string()))
+        .map_err(|e| AgentError::WebSocketError(e.to_string()))
 }
 
 pub async fn receive_message(
@@ -94,15 +94,15 @@ pub async fn receive_message(
                             error!("Config is empty");
                         } else {
                             // convert config to json
-                            let batch_config: BatchConfig = serde_json::from_str(config).unwrap();
-                            info!("batch_config: {:?}", &batch_config);
-                            match process_config(ws_stream, &batch_config, runtime_handle).await {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    error!("Failed to process config: {}", e);
-                                    return;
-                                }
-                            }
+                            // let batch_config: BatchConfig = serde_json::from_str(config).unwrap();
+                            // info!("batch_config: {:?}", &batch_config);
+                            // match process_config(ws_stream, &batch_config, runtime_handle).await {
+                            //     Ok(_) => {}
+                            //     Err(e) => {
+                            //         error!("Failed to process config: {}", e);
+                            //         return;
+                            //     }
+                            // }
                         }
                     }
                     Some("query") => {
@@ -114,27 +114,27 @@ pub async fn receive_message(
                             // query machine
                             // use watching interface
                             let ips = vec![ip.to_string()];
-                            let result = lcd_core::watching(runtime_handle.clone(), ips, 3)
-                                .await
-                                // ignore error
-                                .unwrap_or(vec![]);
+                            // let result = lcd_core::watching(runtime_handle.clone(), ips, 3)
+                            //     .await
+                            //     // ignore error
+                            //     .unwrap_or(vec![]);
 
-                            let message = serde_json::json!({
-                                "name": "query_result",
-                                "data": if result.len() > 0 {
-                                    serde_json::to_string(&result[0]).unwrap()
-                                } else {
-                                    "{}".to_string()
-                                }
-                            });
+                            // let message = serde_json::json!({
+                            //     "name": "query_result",
+                            //     "data": if result.len() > 0 {
+                            //         serde_json::to_string(&result[0]).unwrap()
+                            //     } else {
+                            //         "{}".to_string()
+                            //     }
+                            // });
 
-                            match send_message(ws_stream, &message.to_string()).await {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    error!("Failed to send query result message: {}", e);
-                                    return;
-                                }
-                            }
+                            // match send_message(ws_stream, &message.to_string()).await {
+                            //     Ok(_) => {}
+                            //     Err(e) => {
+                            //         error!("Failed to send query result message: {}", e);
+                            //         return;
+                            //     }
+                            // }
                         }
                     }
                     _ => {
@@ -156,55 +156,56 @@ async fn process_scan(
     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     ip: &str,
     runtime_handle: &tokio::runtime::Handle,
-) -> Result<(), MinerError> {
+) -> Result<(), AgentError> {
     // go through ip range from 1 to 255, every time 10 machines
-    let count = 10;
-    for i in 1..=26 {
-        let start = (i - 1) * count;
-        let result = lcd_core::scan(runtime_handle.clone(), ip, start, 10, 1)
-            .await
-            .unwrap();
-        // info!("scan result: {:?}", &result);
-        // construct json message
+    // let count = 10;
+    // for i in 1..=26 {
+    //     let start = (i - 1) * count;
+    //     let result = lcd_core::scan(runtime_handle.clone(), ip, start, 10, 1)
+    //         .await
+    //         .unwrap();
+    //     // info!("scan result: {:?}", &result);
+    //     // construct json message
 
-        // convert result to json string
-        let converted = serde_json::to_string(&result).unwrap();
+    //     // convert result to json string
+    //     let converted = serde_json::to_string(&result).unwrap();
 
-        let message = serde_json::json!({
-            "name": "scan_result",
-            "data": converted,
-            "progress": (((i as f32) / 26.0) * 100.0) as i32
-        });
+    //     let message = serde_json::json!({
+    //         "name": "scan_result",
+    //         "data": converted,
+    //         "progress": (((i as f32) / 26.0) * 100.0) as i32
+    //     });
 
-        send_message(ws_stream, &message.to_string()).await?;
-    }
+    //     send_message(ws_stream, &message.to_string()).await?;
+    // }
 
     Ok(())
 }
 
-async fn process_config(
-    ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
-    batch_config: &BatchConfig,
-    runtime_handle: &tokio::runtime::Handle,
-) -> Result<(), MinerError> {
-    let result = lcd_core::config(
-        runtime_handle.clone(),
-        batch_config.ips.clone(),
-        batch_config.pools.clone(),
-        batch_config.mode.clone(),
-    )
-    .await
-    .unwrap();
-    info!("config result: {:?}", &result);
-    // construct json message
+// async fn process_config(
+//     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+//     batch_config: &BatchConfig,
+//     runtime_handle: &tokio::runtime::Handle,
+// ) -> Result<(), AgentError> {
+//     // let result = lcd_core::config(
+//     //     runtime_handle.clone(),
+//     //     batch_config.ips.clone(),
+//     //     batch_config.pools.clone(),
+//     //     batch_config.mode.clone(),
+//     // )
+//     // .await
+//     // .unwrap();
+//     // info!("config result: {:?}", &result);
+//     // // construct json message
 
-    // convert result to json string
-    let converted = serde_json::to_string(&result).unwrap();
+//     // // convert result to json string
+//     // let converted = serde_json::to_string(&result).unwrap();
 
-    let message = serde_json::json!({
-        "name": "config_result",
-        "data": converted,
-    });
+//     // let message = serde_json::json!({
+//     //     "name": "config_result",
+//     //     "data": converted,
+//     // });
 
-    send_message(ws_stream, &message.to_string()).await
-}
+//     // send_message(ws_stream, &message.to_string()).await
+//     Ok(())
+// }

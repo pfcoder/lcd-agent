@@ -1,10 +1,11 @@
-use lcd_core::MinersLibConfig;
+use dotenv::dotenv;
 use log::{error, info, LevelFilter};
 use log4rs::{
     append::{console::ConsoleAppender, file::FileAppender},
     config::{Appender, Config, Root},
     encode::pattern::PatternEncoder,
 };
+use std::env;
 use std::{fs, time::Duration};
 use tokio::select;
 use tokio::signal;
@@ -14,6 +15,8 @@ use tokio_tungstenite::connect_async;
 use crate::tasks::watch_machines;
 use crate::ws::{connect_to_websocket, receive_message, send_message};
 
+mod error;
+mod sh;
 mod tasks;
 mod ws;
 
@@ -62,19 +65,21 @@ fn init_log(app_path: &str) {
 }
 
 fn init_lcd(app_path: &str) {
-    lcd_core::init(&MinersLibConfig {
-        app_path: app_path.to_owned(),
-        is_need_db: false,
-        // todo: move to env
-        feishu_app_id: "".to_owned(),
-        feishu_app_secret: "".to_owned(),
-        feishu_bot: "".to_owned(),
-        db_keep_days: 7,
-    });
+    // lcd_core::init(&MinersLibConfig {
+    //     app_path: app_path.to_owned(),
+    //     is_need_db: false,
+    //     // todo: move to env
+    //     feishu_app_id: "".to_owned(),
+    //     feishu_app_secret: "".to_owned(),
+    //     feishu_bot: "".to_owned(),
+    //     db_keep_days: 7,
+    // });
 }
 
 #[tokio::main]
 async fn main() -> Result<(), JobSchedulerError> {
+    dotenv().ok();
+    let agent_token = env::var("AGENT_TOEK").expect("AGENT_TOEK must be set");
     // create home dir if not exist
     let app_path = create_home_dir().unwrap();
     init_log(&app_path);
@@ -113,12 +118,12 @@ async fn main() -> Result<(), JobSchedulerError> {
     let rt_handle = runtime.handle().clone();
     runtime.spawn(async move {
         //let url = "ws://45.144.136.65:8080/websocket/a5b913409b4154b869869ea6d5d73e88";
-        let url = "wss://omni.earthledger.com/websocket/a5b913409b4154b869869ea6d5d73e88";
+        let url = format!("wss://omni.earthledger.com/websocket/{}", agent_token);
         //let url = "ws://localhost:8080/websocket/a5b913409b4154b869869ea6d5d73e88";
         loop {
             info!("try to connect to websocket server");
             let mut stream;
-            match connect_to_websocket(url).await {
+            match connect_to_websocket(&url).await {
                 Ok(ws_stream) => {
                     info!("WebSocket handshake has been successfully completed");
                     stream = ws_stream;

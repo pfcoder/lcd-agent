@@ -7,12 +7,14 @@ edition = "2021"
 
 [dependencies]
 dirs = "5.0.1"
+dotenv = "0.15"
+env_logger = "0.9"
 futures-util = { version = "0.3.28", default-features = false, features = ["sink", "std"] }
 log = "0.4.14"
 log4rs = "1.0"
-lcd-core = { version = "*", path = "../lcd-core" }
 serde = "*"
 serde_json = "*"
+thiserror = "1.0"
 tokio-cron-scheduler = { version = "0.10.0", features = ["signal"] }
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = { version = "0.23.1", features = ["native-tls"] }
