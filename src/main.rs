@@ -15,6 +15,7 @@ use tokio_tungstenite::connect_async;
 use crate::tasks::watch_machines;
 use crate::ws::{connect_to_websocket, receive_message, send_message};
 
+mod collector;
 mod error;
 mod sh;
 mod tasks;
