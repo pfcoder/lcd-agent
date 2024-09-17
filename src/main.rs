@@ -80,7 +80,7 @@ fn init_lcd(_app_path: &str) {
 #[tokio::main]
 async fn main() -> Result<(), JobSchedulerError> {
     dotenv().ok();
-    let agent_token = env::var("AGENT_TOEK").expect("AGENT_TOEK must be set");
+    let agent_token = env::var("AGENT_TOKEN").expect("AGENT_TOKEN must be set");
     // create home dir if not exist
     let app_path = create_home_dir().unwrap();
     init_log(&app_path);
@@ -119,7 +119,7 @@ async fn main() -> Result<(), JobSchedulerError> {
     let rt_handle = runtime.handle().clone();
     runtime.spawn(async move {
         //let url = "ws://45.144.136.65:8080/websocket/a5b913409b4154b869869ea6d5d73e88";
-        let url = format!("wss://omni.earthledger.com/websocket/{}", agent_token);
+        let url = format!("wss://omni-hash.earthledger.com/websocket/{}", agent_token);
         //let url = "ws://localhost:8080/websocket/a5b913409b4154b869869ea6d5d73e88";
         loop {
             info!("try to connect to websocket server");
