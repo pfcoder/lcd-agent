@@ -80,10 +80,10 @@ pub async fn batch_scan(
                 machines.push(machine);
             }
             Ok(Err(e)) => {
-                info!("scan_and_update_db error: {:?}", e);
+                // info!("scan_and_update_db error: {:?}", e);
             }
             Err(e) => {
-                info!("scan_and_update_db join error: {:?}", e);
+                // info!("scan_and_update_db join error: {:?}", e);
             }
         }
     }

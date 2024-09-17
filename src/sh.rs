@@ -31,11 +31,11 @@ pub fn run_command(
 
     if output.status.success() {
         let stdout = str::from_utf8(&output.stdout)?;
-        info!("{}", stdout);
+        // info!("{}", stdout);
         return Ok(stdout.to_owned());
     } else {
         let stderr = str::from_utf8(&output.stderr)?;
-        error!("{}", stderr);
+        // error!("{}", stderr);
         return Err(AgentError::CommandError(stderr.to_owned()));
     }
 }
