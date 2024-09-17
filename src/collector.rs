@@ -51,7 +51,10 @@ pub fn scan_ip_detail(ip: String, timeout_seconds: i64) -> AsyncOpType<MachineIn
 
         let output = run_command(&ip, 22, "root", "dbos-miner", cmd)?;
 
-        Ok(MachineInfo::from(output.as_str()))
+        Ok(MachineInfo {
+            ip,
+            ..MachineInfo::from(output.as_str())
+        })
     })
 }
 
