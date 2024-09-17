@@ -68,7 +68,7 @@ pub async fn batch_scan(
     let mut handles = vec![];
     for i in 1..256 {
         let ip = format!("{}.{}", ip_prefix, i);
-        handles.push(runtime_handle.spawn(async move { scan_ip_detail(ip, 3).await }));
+        handles.push(runtime_handle.spawn(async move { scan_ip_detail(ip, 10).await }));
     }
 
     let result = futures::future::join_all(handles).await;
