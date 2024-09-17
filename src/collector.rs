@@ -10,7 +10,7 @@ use crate::sh::run_command;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MachineInfo {
-    #[serde(skip)]
+    #[serde(skip_deserializing)]
     pub ip: String,
 
     #[serde(skip)]
