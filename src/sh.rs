@@ -13,8 +13,11 @@ pub fn run_command(
     user: &str,
     password: &str,
     command: &str,
+    timeout_seconds: u64,
 ) -> Result<String, AgentError> {
-    let output = Command::new("sshpass")
+    let output = Command::new("timeout")
+        .arg(timeout_seconds.to_string())
+        .arg("sshpass")
         .arg("-p")
         .arg(password)
         .arg("ssh")
@@ -64,7 +67,7 @@ mod tests {
         let password = "ylkj..";
         let command = "ls";
         let user = "ylkj09";
-        let result = run_command(ip, port, user, password, command);
+        let result = run_command(ip, port, user, password, command, 5);
         info!("{:?}", result);
         assert!(result.is_ok());
     }

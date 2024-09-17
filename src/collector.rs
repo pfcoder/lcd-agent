@@ -45,11 +45,11 @@ impl From<&str> for MachineInfo {
 
 pub type AsyncOpType<T> = Pin<Box<dyn Future<Output = Result<T, AgentError>> + Send>>;
 
-pub fn scan_ip_detail(ip: String, timeout_seconds: i64) -> AsyncOpType<MachineInfo> {
+pub fn scan_ip_detail(ip: String, timeout_seconds: u64) -> AsyncOpType<MachineInfo> {
     Box::pin(async move {
         let cmd = "/opt/script/omni-collect.sh";
 
-        let output = run_command(&ip, 22, "root", "dbos-miner", cmd)?;
+        let output = run_command(&ip, 22, "root", "dbos-miner", cmd, timeout_seconds)?;
 
         Ok(MachineInfo {
             ip,
@@ -68,7 +68,7 @@ pub async fn batch_scan(
     let mut handles = vec![];
     for i in 1..256 {
         let ip = format!("{}.{}", ip_prefix, i);
-        handles.push(runtime_handle.spawn(async move { scan_ip_detail(ip, 5).await }));
+        handles.push(runtime_handle.spawn(async move { scan_ip_detail(ip, 3).await }));
     }
 
     let result = futures::future::join_all(handles).await;
