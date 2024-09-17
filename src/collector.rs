@@ -10,8 +10,12 @@ use crate::sh::run_command;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MachineInfo {
+    #[serde(skip)]
     pub ip: String,
+
+    #[serde(skip)]
     pub machine_type: String,
+
     pub hash: String,
     pub temp_sys: String,
     pub temp_hdd: String,
@@ -40,7 +44,7 @@ pub type AsyncOpType<T> = Pin<Box<dyn Future<Output = Result<T, AgentError>> + S
 
 pub fn scan_ip_detail(ip: String, timeout_seconds: i64) -> AsyncOpType<MachineInfo> {
     Box::pin(async move {
-        let cmd = "/opt/script/collect.sh";
+        let cmd = "/opt/script/omni-collect.sh";
 
         let output = run_command(&ip, 22, "root", "dbos-miner", cmd)?;
 
