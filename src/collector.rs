@@ -133,7 +133,14 @@ mod tests {
         init_logger();
 
         let ip = "192.168.11.1";
-        let rt = Runtime::new().unwrap();
+        // let rt = Runtime::new().unwrap();
+
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(256)
+            .enable_all()
+            .build()
+            .unwrap();
+
         let result = rt.block_on(batch_scan(ip, rt.handle()));
 
         assert!(result.is_ok());
