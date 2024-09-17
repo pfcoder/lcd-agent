@@ -21,7 +21,10 @@ pub struct MachineInfo {
     pub temp_hdd: String,
     pub cpu_occupy: String,
     pub cpu_model: String,
+
+    #[serde(skip)]
     pub elapsed: String,
+
     pub sn: String,
     pub hdd_sn: String,
 }
