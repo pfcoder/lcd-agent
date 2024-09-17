@@ -3,7 +3,7 @@
 use std::process::Command;
 use std::str;
 
-use log::{error, info};
+//use log::{error, info};
 
 use crate::error::AgentError;
 
@@ -68,7 +68,7 @@ mod tests {
         let command = "ls";
         let user = "ylkj09";
         let result = run_command(ip, port, user, password, command, 5);
-        info!("{:?}", result);
+        //info!("{:?}", result);
         assert!(result.is_ok());
     }
 }

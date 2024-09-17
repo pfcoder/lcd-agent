@@ -1,4 +1,4 @@
-pub async fn watch_machines(runtime: tokio::runtime::Handle) {
+pub async fn watch_machines(_runtime: tokio::runtime::Handle) {
     // let _ = lcd_core::switch_if_need(
     //     runtime,
     //     "PwjYsZoefh6rXZt3mIucC9XmnZb",

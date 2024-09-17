@@ -4,7 +4,7 @@ use futures_util::sink::SinkExt;
 use futures_util::StreamExt;
 use log::error;
 use log::info;
-use serde::{Deserialize, Serialize};
+//use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 use tokio::net::TcpStream;
@@ -114,7 +114,7 @@ pub async fn receive_message(
                         } else {
                             // query machine
                             // use watching interface
-                            let ips = vec![ip.to_string()];
+                            let _ips = vec![ip.to_string()];
                             // let result = lcd_core::watching(runtime_handle.clone(), ips, 3)
                             //     .await
                             //     // ignore error

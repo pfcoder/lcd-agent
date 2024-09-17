@@ -10,10 +10,10 @@ use std::{fs, time::Duration};
 use tokio::select;
 use tokio::signal;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
-use tokio_tungstenite::connect_async;
+// use tokio_tungstenite::connect_async;
 
 use crate::tasks::watch_machines;
-use crate::ws::{connect_to_websocket, receive_message, send_message};
+use crate::ws::{connect_to_websocket, receive_message};
 
 mod collector;
 mod error;
@@ -65,7 +65,7 @@ fn init_log(app_path: &str) {
     log4rs::init_config(config).unwrap();
 }
 
-fn init_lcd(app_path: &str) {
+fn init_lcd(_app_path: &str) {
     // lcd_core::init(&MinersLibConfig {
     //     app_path: app_path.to_owned(),
     //     is_need_db: false,
