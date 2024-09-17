@@ -12,4 +12,7 @@ pub enum AgentError {
     //IoError
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+    //SerdeJsonError
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error),
 }

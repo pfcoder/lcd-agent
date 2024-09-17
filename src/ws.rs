@@ -13,6 +13,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::WebSocketStream;
 
+use crate::collector::batch_scan;
 use crate::error::AgentError;
 
 // #[derive(Serialize, Deserialize, Debug)]
@@ -157,27 +158,16 @@ async fn process_scan(
     ip: &str,
     runtime_handle: &tokio::runtime::Handle,
 ) -> Result<(), AgentError> {
-    // go through ip range from 1 to 255, every time 10 machines
-    // let count = 10;
-    // for i in 1..=26 {
-    //     let start = (i - 1) * count;
-    //     let result = lcd_core::scan(runtime_handle.clone(), ip, start, 10, 1)
-    //         .await
-    //         .unwrap();
-    //     // info!("scan result: {:?}", &result);
-    //     // construct json message
+    let machines = batch_scan(ip, runtime_handle).await?;
 
-    //     // convert result to json string
-    //     let converted = serde_json::to_string(&result).unwrap();
+    let converted = serde_json::to_string(&machines)?;
 
-    //     let message = serde_json::json!({
-    //         "name": "scan_result",
-    //         "data": converted,
-    //         "progress": (((i as f32) / 26.0) * 100.0) as i32
-    //     });
+    let message = serde_json::json!({
+        "name": "scan_result",
+        "data": converted,
+    });
 
-    //     send_message(ws_stream, &message.to_string()).await?;
-    // }
+    send_message(ws_stream, &message.to_string()).await?;
 
     Ok(())
 }

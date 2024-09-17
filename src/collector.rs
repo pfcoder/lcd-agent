@@ -1,6 +1,6 @@
 use std::pin::Pin;
 
-use log::error;
+use log::{error, info};
 use serde::Deserialize;
 use serde::Serialize;
 use std::future::Future;
@@ -58,6 +58,41 @@ pub fn scan_ip_detail(ip: String, timeout_seconds: i64) -> AsyncOpType<MachineIn
     })
 }
 
+pub async fn batch_scan(
+    ip: &str,
+    runtime_handle: &tokio::runtime::Handle,
+) -> Result<Vec<MachineInfo>, AgentError> {
+    info!("scan ip: {}", ip);
+
+    let ip_prefix = ip.split('.').take(3).collect::<Vec<&str>>().join(".");
+    let mut handles = vec![];
+    for i in 1..256 {
+        let ip = format!("{}.{}", ip_prefix, i);
+        handles.push(runtime_handle.spawn(async move { scan_ip_detail(ip, 5).await }));
+    }
+
+    let result = futures::future::join_all(handles).await;
+
+    let mut machines = vec![];
+    for res in result {
+        match res {
+            Ok(Ok(machine)) => {
+                machines.push(machine);
+            }
+            Ok(Err(e)) => {
+                info!("scan_and_update_db error: {:?}", e);
+            }
+            Err(e) => {
+                info!("scan_and_update_db join error: {:?}", e);
+            }
+        }
+    }
+
+    info!("scan ip done: {}", machines.len());
+
+    Ok(machines)
+}
+
 // test
 #[cfg(test)]
 mod tests {
@@ -91,5 +126,18 @@ mod tests {
         assert!(result.is_ok());
         let info = result.unwrap();
         info!("{:?}", info);
+    }
+
+    #[test]
+    fn test_batch_scan() {
+        init_logger();
+
+        let ip = "192.168.11.1";
+        let rt = Runtime::new().unwrap();
+        let result = rt.block_on(batch_scan(ip, rt.handle()));
+
+        assert!(result.is_ok());
+        let machines = result.unwrap();
+        info!("{:?}", machines);
     }
 }
