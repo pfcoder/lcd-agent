@@ -1,0 +1,14 @@
+[Unit]
+Description=omni-agent
+After=network.target
+Requles=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/omni-agent/start.sh
+ExecStop=/root/omni-agent/stop.sh
+KillMode=none
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
