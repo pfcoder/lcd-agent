@@ -16,6 +16,8 @@ cp release/lcd-agent /opt/omni-agent/
 chmod a+x /opt/omni-agent/start.sh
 chmod a+x /opt/omni-agent/stop.sh
 
+echo "AGENT_TOKEN=$API_TOKEN" > /opt/omni-agent/.env
+
 systemctl daemon-reload
 systemctl enable lcd-agent
 systemctl start lcd-agent
