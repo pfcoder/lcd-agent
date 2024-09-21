@@ -160,14 +160,23 @@ async fn process_scan(
 ) -> Result<(), AgentError> {
     let machines = batch_scan(ip, runtime_handle).await?;
 
-    let converted = serde_json::to_string(&machines)?;
+    // split machines into multiple messages, 10 machines per message
+    let mut start = 0;
+    let mut end = 10;
+    while start < machines.len() {
+        end = std::cmp::min(end, machines.len());
+        let message = serde_json::json!({
+            "name": "scan_result",
+            "data": serde_json::to_string(&machines[start..end])?,
+        });
 
-    let message = serde_json::json!({
-        "name": "scan_result",
-        "data": converted,
-    });
+        // info!("send: {}", message.to_string());
+        send_message(ws_stream, &message.to_string()).await?;
+        info!("send scan result message {} {}", start, end);
 
-    send_message(ws_stream, &message.to_string()).await?;
+        start = end;
+        end += 10;
+    }
 
     Ok(())
 }
