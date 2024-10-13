@@ -14,7 +14,7 @@ while IFS=, read -r index name power temperature; do
     power=$(echo "$power" | xargs)
     temperature=$(echo "$temperature" | xargs)
     
-    json_output+=$(jq -n \
+    json_output+=$(jq -nc \
         --arg index "$index" \
         --arg name "$name" \
         --arg power "$power" \
@@ -27,4 +27,4 @@ done <<< "$gpu_info"
 json_output="${json_output%,}]"
 
 # Output JSON
-echo "$json_output" | jq .
+echo "$json_output"

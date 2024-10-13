@@ -36,7 +36,7 @@ pub fn run_command(
 
     if output.status.success() {
         let stdout = str::from_utf8(&output.stdout)?;
-        //info!("{}", stdout);
+        info!("stdout: {}", stdout);
         return Ok(stdout.to_owned());
     } else {
         let stderr = str::from_utf8(&output.stderr)?;
