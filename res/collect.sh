@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # get gpu json from ./gpu.sh
-gpu_info=$(./gpu.sh)
+gpu_info=$(/opt/omni-gpu-agent/gpu.sh)
 
 # get prover json from ./prover.sh
-prover_info=$(./prover.sh)
+prover_info=$(/opt/omni-gpu-agent//prover.sh)
 
 # combine result to a single json
 json_output=$(jq -nc \
@@ -13,4 +13,4 @@ json_output=$(jq -nc \
     '{gpu_info: $gpu_info, prover_info: $prover_info}')
 
 # output json
-echo "$json_output" | jq .
+echo "$json_output"

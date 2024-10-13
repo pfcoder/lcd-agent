@@ -40,7 +40,7 @@ if [ -n "$last_timestamp" ] && [ ${#gpu_info_list[@]} -gt 0 ]; then
             sixty_min="${BASH_REMATCH[6]}"
 
             # Append JSON object to the output
-            json_output+=$(jq -n \
+            json_output+=$(jq -nc \
                 --arg timestamp "$last_timestamp" \
                 --arg gpu_index "$gpu_index" \
                 --arg one_min "$one_min" \
@@ -57,7 +57,7 @@ if [ -n "$last_timestamp" ] && [ ${#gpu_info_list[@]} -gt 0 ]; then
     json_output="${json_output%,}]"
 
     # Output JSON
-    echo "$json_output" | jq .
+    echo "$json_output"
 else
     # echo empty json
     echo "[]"
