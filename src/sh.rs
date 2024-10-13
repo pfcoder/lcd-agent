@@ -3,7 +3,9 @@
 use std::process::Command;
 use std::str;
 
-//use log::{error, info};
+use log::{error, info};
+
+//use log::info;
 
 use crate::error::AgentError;
 
@@ -15,6 +17,7 @@ pub fn run_command(
     command: &str,
     timeout_seconds: u64,
 ) -> Result<String, AgentError> {
+    //info!("cmd: {}", command);
     let output = Command::new("timeout")
         .arg(timeout_seconds.to_string())
         .arg("sshpass")
@@ -29,13 +32,15 @@ pub fn run_command(
         .arg(command)
         .output()?;
 
+    //info!("cmd status: {}", output.status);
+
     if output.status.success() {
         let stdout = str::from_utf8(&output.stdout)?;
-        // info!("{}", stdout);
+        //info!("{}", stdout);
         return Ok(stdout.to_owned());
     } else {
         let stderr = str::from_utf8(&output.stderr)?;
-        // error!("{}", stderr);
+        //error!("cmd error:{}", stderr);
         return Err(AgentError::CommandError(stderr.to_owned()));
     }
 }

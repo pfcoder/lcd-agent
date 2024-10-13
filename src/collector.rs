@@ -146,6 +146,7 @@ mod tests {
 
         let rt = Runtime::new().unwrap();
         let result = rt.block_on(scan_ip_detail(ip, timeout_seconds));
+        info!("result: {:?}", result);
 
         assert!(result.is_ok());
         let info = result.unwrap();
