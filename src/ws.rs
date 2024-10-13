@@ -1,4 +1,3 @@
-use std::fmt::Result;
 use std::vec;
 
 use futures_util::sink::SinkExt;
