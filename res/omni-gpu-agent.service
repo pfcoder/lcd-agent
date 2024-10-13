@@ -1,12 +1,12 @@
 [Unit]
-Description=omni-agent
+Description=omni-gpu-agent
 After=network.target
 Requles=network.target
 
 [Service]
 Type=forking
-ExecStart=/opt/omni-agent/start.sh
-ExecStop=/root/omni-agent/stop.sh
+ExecStart=/opt/omni-gpu-agent/start.sh
+ExecStop=/root/omni-gpu-agent/stop.sh
 KillMode=none
 Restart=on-failure
 

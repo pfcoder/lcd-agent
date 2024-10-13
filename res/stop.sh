@@ -1,2 +1,2 @@
 #!/bin/bash
-kill -s 9 `cat /opt/omni-agent/pid`
+kill -s 9 `cat /opt/omni-gpu-agent/pid`

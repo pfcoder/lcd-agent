@@ -8,25 +8,49 @@ use std::future::Future;
 use crate::error::AgentError;
 use crate::sh::run_command;
 
+/*
+{
+    "index": "0",
+    "name": "NVIDIA GeForce RTX 3070",
+    "power": "172.27",
+    "temperature": "89"
+  }, */
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct GpuInfo {
+    pub index: String,
+    pub name: String,
+    pub power: String,
+    pub temperature: String,
+}
+
+/*
+{
+    "timestamp": "2024-10-13T10:22:57",
+    "gpu_index": "0",
+    "one_min": "445925",
+    "five_min": "445325",
+    "fifteen_min": "332917",
+    "thirty_min": "306742",
+    "sixty_min": "309270"
+  } */
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct ProverInfo {
+    pub timestamp: String,
+    pub gpu_index: String,
+    pub one_min: String,
+    pub five_min: String,
+    pub fifteen_min: String,
+    pub thirty_min: String,
+    pub sixty_min: String,
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MachineInfo {
     #[serde(skip_deserializing)]
     pub ip: String,
 
-    #[serde(skip)]
-    pub machine_type: String,
-
-    pub hash: String,
-    pub temp_sys: String,
-    pub temp_hdd: String,
-    pub cpu_occupy: String,
-    pub cpu_model: String,
-
-    #[serde(skip)]
-    pub elapsed: String,
-
-    pub sn: String,
-    pub hdd_sn: String,
+    pub gpu_info: Vec<GpuInfo>,
+    pub prover_info: Vec<ProverInfo>,
 }
 
 // impl json string to MachineInfo
@@ -47,9 +71,9 @@ pub type AsyncOpType<T> = Pin<Box<dyn Future<Output = Result<T, AgentError>> + S
 
 pub fn scan_ip_detail(ip: String, timeout_seconds: u64) -> AsyncOpType<MachineInfo> {
     Box::pin(async move {
-        let cmd = "/opt/script/omni-collect.sh";
+        let cmd = "/opt/omni-gpu-agent/collect.sh";
 
-        let output = run_command(&ip, 22, "root", "dbos-miner", cmd, timeout_seconds)?;
+        let output = run_command(&ip, 22, "root", "123456.", cmd, timeout_seconds)?;
 
         Ok(MachineInfo {
             ip,
@@ -117,7 +141,7 @@ mod tests {
     fn test_scan_ip_detail() {
         init_logger();
 
-        let ip = "192.168.11.88".to_string();
+        let ip = "192.168.187.73".to_string();
         let timeout_seconds = 10;
 
         let rt = Runtime::new().unwrap();

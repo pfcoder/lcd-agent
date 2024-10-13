@@ -1,3 +1,4 @@
+use std::fmt::Result;
 use std::vec;
 
 use futures_util::sink::SinkExt;
@@ -178,6 +179,15 @@ async fn process_scan(
         end += 10;
     }
 
+    Ok(())
+}
+
+// update machine specified pkg
+async fn process_update(
+    ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+    ip: &str,
+    runtime_handle: &tokio::runtime::Handle,
+) -> Result<(), AgentError> {
     Ok(())
 }
 
