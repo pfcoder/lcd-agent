@@ -10,6 +10,8 @@ API_TOKEN=$1
 RUN_DIR="/opt/omni-gpu-agent"
 EXE_NAME="omni-gpu-agent"
 
+systemctl stop "$EXE_NAME" || { echo "Failed to stop $EXE_NAME service"; exit 1; }
+
 # Create the run directory if it doesn't exist
 mkdir -p "$RUN_DIR" || { echo "Failed to create directory $RUN_DIR"; exit 1; }
 
@@ -30,7 +32,6 @@ echo "AGENT_TOKEN=$API_TOKEN" > "$RUN_DIR/.env" || { echo "Failed to create .env
 # Reload systemd, enable and start the service
 systemctl daemon-reload || { echo "Failed to reload systemd"; exit 1; }
 systemctl enable "$EXE_NAME" || { echo "Failed to enable $EXE_NAME service"; exit 1; }
-systemctl stop "$EXE_NAME" || { echo "Failed to stop $EXE_NAME service"; exit 1; }
 systemctl start "$EXE_NAME" || { echo "Failed to start $EXE_NAME service"; exit 1; }
 
 echo "Deployment omni-gpu-agent successfully."
