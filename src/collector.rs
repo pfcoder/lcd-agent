@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::future::Future;
 
 use crate::error::AgentError;
-use crate::sh::run_command;
+use crate::sh::{run_command, run_scp};
 
 /*
 {
@@ -69,21 +69,74 @@ impl From<&str> for MachineInfo {
 
 pub type AsyncOpType<T> = Pin<Box<dyn Future<Output = Result<T, AgentError>> + Send>>;
 
-pub fn scan_ip_detail(ip: String, timeout_seconds: u64) -> AsyncOpType<MachineInfo> {
+pub fn deploy_to_ip(ip: &str, pwd: &str, timeout_seconds: u64) -> AsyncOpType<()> {
+    let ip = ip.to_string();
+    let pwd = pwd.to_string();
+
+    Box::pin(async move {
+        let _output = run_scp(
+            &ip,
+            22,
+            "root",
+            &pwd,
+            "./omni-gpu-agent.tgz",
+            "/opt/omni-gpu-agent.tgz",
+            timeout_seconds,
+        )?;
+
+        // scp success, then perform remote tar -xvzf
+        let cmd = "tar -xvzf /opt/omni-gpu-agent.tgz -C /opt";
+        let _output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
+        // perform remote shell script /opt/omni-gpu-agent/zk-ins.sh
+        let cmd = "/opt/omni-gpu-agent/zk-ins.sh";
+        let _output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
+
+        // this will be a long time depends on target machine network
+
+        Ok(())
+    })
+}
+
+pub fn reboot_ip(ip: &str, pwd: &str, timeout_seconds: u64) -> AsyncOpType<()> {
+    let ip = ip.to_string();
+    let pwd = pwd.to_string();
+    Box::pin(async move {
+        let cmd = "reboot";
+        let _output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
+
+        Ok(())
+    })
+}
+
+pub fn scan_ip_detail(ip: &str, pwd: &str, timeout_seconds: u64) -> AsyncOpType<(MachineInfo)> {
+    let ip = ip.to_string();
+    let pwd = pwd.to_string();
     Box::pin(async move {
         let cmd = "/opt/omni-gpu-agent/collect.sh";
 
-        let output = run_command(&ip, 22, "root", "123456.", cmd, timeout_seconds)?;
+        let output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
 
         Ok(MachineInfo {
-            ip,
+            ip: ip.to_string(),
             ..MachineInfo::from(output.as_str())
         })
     })
 }
 
+pub fn reboot_prover(ip: &str, pwd: &str, timeout_seconds: u64) -> AsyncOpType<()> {
+    let ip = ip.to_string();
+    let pwd = pwd.to_string();
+    Box::pin(async move {
+        let cmd = "systemctl restart aleo.service";
+        let _output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
+
+        Ok(())
+    })
+}
+
 pub async fn batch_scan(
     ip: &str,
+    pwd: &str,
     runtime_handle: &tokio::runtime::Handle,
 ) -> Result<Vec<MachineInfo>, AgentError> {
     info!("scan ip: {}", ip);
@@ -92,7 +145,8 @@ pub async fn batch_scan(
     let mut handles = vec![];
     for i in 1..256 {
         let ip = format!("{}.{}", ip_prefix, i);
-        handles.push(runtime_handle.spawn(async move { scan_ip_detail(ip, 5).await }));
+        let pwd = pwd.to_string();
+        handles.push(runtime_handle.spawn(async move { scan_ip_detail(&ip, &pwd, 5).await }));
     }
 
     let result = futures::future::join_all(handles).await;
@@ -115,6 +169,24 @@ pub async fn batch_scan(
     info!("scan ip done: {}", machines.len());
 
     Ok(machines)
+}
+
+pub async fn batch_deploy(
+    ip: &str,
+    pwd: &str,
+    runtime_handle: &tokio::runtime::Handle,
+) -> Result<(), AgentError> {
+    let ip_prefix = ip.split('.').take(3).collect::<Vec<&str>>().join(".");
+    let mut handles = vec![];
+    for i in 1..256 {
+        let ip = format!("{}.{}", ip_prefix, i);
+        let pwd = pwd.to_string();
+        handles.push(runtime_handle.spawn(async move { deploy_to_ip(&ip, &pwd, 5).await }));
+    }
+
+    let _result = futures::future::join_all(handles).await;
+
+    Ok(())
 }
 
 // test
@@ -141,11 +213,27 @@ mod tests {
     fn test_scan_ip_detail() {
         init_logger();
 
-        let ip = "192.168.187.73".to_string();
+        let ip = "192.168.187.73";
         let timeout_seconds = 10;
 
         let rt = Runtime::new().unwrap();
-        let result = rt.block_on(scan_ip_detail(ip, timeout_seconds));
+        let result = rt.block_on(scan_ip_detail(ip, "123456.", timeout_seconds));
+        info!("result: {:?}", result);
+
+        assert!(result.is_ok());
+        let info = result.unwrap();
+        info!("{:?}", info);
+    }
+
+    #[test]
+    fn test_deploy_to_ip() {
+        init_logger();
+
+        let ip = "192.168.187.73";
+        let timeout_seconds = 10;
+
+        let rt = Runtime::new().unwrap();
+        let result = rt.block_on(deploy_to_ip(ip, "123456.", timeout_seconds));
         info!("result: {:?}", result);
 
         assert!(result.is_ok());
@@ -166,7 +254,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let result = rt.block_on(batch_scan(ip, rt.handle()));
+        let result = rt.block_on(batch_scan(ip, "123456.", rt.handle()));
 
         assert!(result.is_ok());
         let machines = result.unwrap();

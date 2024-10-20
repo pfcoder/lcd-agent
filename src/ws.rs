@@ -16,6 +16,8 @@ use tokio_tungstenite::WebSocketStream;
 use crate::collector::batch_scan;
 use crate::error::AgentError;
 
+type WsType = WebSocketStream<MaybeTlsStream<TcpStream>>;
+
 // #[derive(Serialize, Deserialize, Debug)]
 // struct BatchConfig {
 //     ips: Vec<String>,
@@ -76,10 +78,11 @@ pub async fn receive_message(
                     Some("scan") => {
                         info!("Received scan command");
                         let ip = json["data"].as_str().unwrap_or("");
+                        let pwd = json["pwd"].as_str().unwrap_or("");
                         if ip.is_empty() {
                             error!("IP is empty");
                         } else {
-                            match process_scan(ws_stream, ip, runtime_handle).await {
+                            match process_scan(ws_stream, ip, pwd, runtime_handle).await {
                                 Ok(_) => {}
                                 Err(e) => {
                                     error!("Failed to process scan: {}", e);
@@ -156,9 +159,10 @@ pub async fn receive_message(
 async fn process_scan(
     ws_stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     ip: &str,
+    pwd: &str,
     runtime_handle: &tokio::runtime::Handle,
 ) -> Result<(), AgentError> {
-    let machines = batch_scan(ip, runtime_handle).await?;
+    let machines = batch_scan(ip, pwd, runtime_handle).await?;
 
     // split machines into multiple messages, 10 machines per message
     let mut start = 0;
@@ -178,6 +182,16 @@ async fn process_scan(
         end += 10;
     }
 
+    Ok(())
+}
+
+// cp shell script to remote
+// execute shell script
+async fn process_deploy(
+    ws_stream: &mut WsType,
+    ip: &str,
+    runtime_handle: &tokio::runtime::Handle,
+) -> Result<(), AgentError> {
     Ok(())
 }
 
