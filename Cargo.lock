@@ -519,26 +519,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
-name = "lcd-agent"
-version = "0.1.0"
-dependencies = [
- "dirs",
- "dotenv",
- "env_logger",
- "futures",
- "futures-util",
- "lazy_static",
- "log",
- "log4rs",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tokio-cron-scheduler",
- "tokio-tungstenite",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.155"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -709,6 +689,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "576dfe1fc8f9df304abb159d767a29d0476f7750fbf8aa7ad07816004a207434"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "omni-gpu-agent"
+version = "0.1.0"
+dependencies = [
+ "dirs",
+ "dotenv",
+ "env_logger",
+ "futures",
+ "futures-util",
+ "lazy_static",
+ "log",
+ "log4rs",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-cron-scheduler",
+ "tokio-tungstenite",
 ]
 
 [[package]]
