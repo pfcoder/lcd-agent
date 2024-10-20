@@ -13,7 +13,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::WebSocketStream;
 
-use crate::collector::batch_scan;
+use crate::collector::{batch_scan, deploy_to_ip};
 use crate::error::AgentError;
 
 type WsType = WebSocketStream<MaybeTlsStream<TcpStream>>;
@@ -77,10 +77,11 @@ pub async fn receive_message(
                 match json["name"].as_str() {
                     Some("scan") => {
                         info!("Received scan command");
-                        let ip = json["data"].as_str().unwrap_or("");
-                        let pwd = json["pwd"].as_str().unwrap_or("");
-                        if ip.is_empty() {
-                            error!("IP is empty");
+                        let ip = json["data"]["ip"].as_str().unwrap_or("");
+                        let pwd = json["data"]["pwd"].as_str().unwrap_or("");
+
+                        if ip.is_empty() || pwd.is_empty() {
+                            error!("IP or PWD is empty");
                         } else {
                             match process_scan(ws_stream, ip, pwd, runtime_handle).await {
                                 Ok(_) => {}
@@ -91,22 +92,21 @@ pub async fn receive_message(
                             }
                         }
                     }
-                    Some("config") => {
-                        info!("Received config command");
-                        let config = json["data"].as_str().unwrap_or("");
-                        if config.is_empty() {
-                            error!("Config is empty");
+                    Some("deploy") => {
+                        info!("Received deploy command");
+                        let ip = json["data"]["ip"].as_str().unwrap_or("");
+                        let pwd = json["data"]["pwd"].as_str().unwrap_or("");
+
+                        if ip.is_empty() || pwd.is_empty() {
+                            error!("IP or PWD is empty");
                         } else {
-                            // convert config to json
-                            // let batch_config: BatchConfig = serde_json::from_str(config).unwrap();
-                            // info!("batch_config: {:?}", &batch_config);
-                            // match process_config(ws_stream, &batch_config, runtime_handle).await {
-                            //     Ok(_) => {}
-                            //     Err(e) => {
-                            //         error!("Failed to process config: {}", e);
-                            //         return;
-                            //     }
-                            // }
+                            match process_deploy(ws_stream, ip, pwd, runtime_handle).await {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    error!("Failed to process scan: {}", e);
+                                    return;
+                                }
+                            }
                         }
                     }
                     Some("query") => {
@@ -190,8 +190,10 @@ async fn process_scan(
 async fn process_deploy(
     ws_stream: &mut WsType,
     ip: &str,
+    pwd: &str,
     runtime_handle: &tokio::runtime::Handle,
 ) -> Result<(), AgentError> {
+    deploy_to_ip(ip, pwd, 10).await?;
     Ok(())
 }
 

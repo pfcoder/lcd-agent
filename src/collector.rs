@@ -114,12 +114,16 @@ pub fn scan_ip_detail(ip: &str, pwd: &str, timeout_seconds: u64) -> AsyncOpType<
     Box::pin(async move {
         let cmd = "/opt/omni-gpu-agent/collect.sh";
 
-        let output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
-
-        Ok(MachineInfo {
-            ip: ip.to_string(),
-            ..MachineInfo::from(output.as_str())
-        })
+        match run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds) {
+            Ok(output) => Ok(MachineInfo {
+                ip: ip.to_string(),
+                ..MachineInfo::from(output.as_str())
+            }),
+            Err(_e) => Ok(MachineInfo {
+                ip: ip.to_string(),
+                ..MachineInfo::default()
+            }),
+        }
     })
 }
 
