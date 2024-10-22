@@ -96,11 +96,15 @@ pub async fn receive_message(
                         info!("Received deploy command");
                         let ip = json["data"]["ip"].as_str().unwrap_or("");
                         let pwd = json["data"]["pwd"].as_str().unwrap_or("");
+                        let ver = json["data"]["ver"].as_str().unwrap_or("");
+                        let addr = json["data"]["addr"].as_str().unwrap_or("");
 
-                        if ip.is_empty() || pwd.is_empty() {
+                        if ip.is_empty() || pwd.is_empty() || ver.is_empty() || addr.is_empty() {
                             error!("IP or PWD is empty");
                         } else {
-                            match process_deploy(ws_stream, ip, pwd, runtime_handle).await {
+                            match process_deploy(ws_stream, ip, pwd, ver, addr, runtime_handle)
+                                .await
+                            {
                                 Ok(_) => {}
                                 Err(e) => {
                                     error!("Failed to process scan: {}", e);
@@ -191,9 +195,11 @@ async fn process_deploy(
     ws_stream: &mut WsType,
     ip: &str,
     pwd: &str,
+    ver: &str,
+    addr: &str,
     runtime_handle: &tokio::runtime::Handle,
 ) -> Result<(), AgentError> {
-    deploy_to_ip(ip, pwd, 10).await?;
+    deploy_to_ip(ip, pwd, ver, addr, 10).await?;
     Ok(())
 }
 

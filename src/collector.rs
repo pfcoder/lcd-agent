@@ -78,6 +78,8 @@ pub fn deploy_to_ip(
 ) -> AsyncOpType<()> {
     let ip = ip.to_string();
     let pwd = pwd.to_string();
+    let ver = ver.to_string();
+    let addr = addr.to_string();
 
     Box::pin(async move {
         let _output = run_scp(
