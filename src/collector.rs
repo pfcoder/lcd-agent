@@ -87,17 +87,17 @@ pub fn deploy_to_ip(
             22,
             "root",
             &pwd,
-            "./omni-gpu-agent.tgz",
-            "/opt/omni-gpu-agent.tgz",
+            "./machine.tgz",
+            "/opt/machine.tgz",
             timeout_seconds,
         )?;
 
         // scp success, then perform remote tar -xvzf
-        let cmd = "tar -xvzf /opt/omni-gpu-agent.tgz -C /opt";
+        let cmd = "tar -xvzf /opt/machine.tgz -C /opt/";
         let _output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
         // perform remote shell script /opt/omni-gpu-agent/zk-ins.sh
         // let cmd = "/opt/omni-gpu-agent/zk-ins.sh";
-        let cmd = format!("/opt/omni-gpu-agent/zk-ins.sh {} {}", ver, addr);
+        let cmd = format!("/opt/machine/zk-ins.sh {} {}", ver, addr);
         let _output = run_command(&ip, 22, "root", &pwd, &cmd, timeout_seconds)?;
 
         // this will be a long time depends on target machine network
