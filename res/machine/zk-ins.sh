@@ -18,7 +18,7 @@ if [ -z "$VER" ] || [ -z "$ADDR" ] ; then
   exit 1
 fi
 
-echo "deb http://cz.archive.ubuntu.com/ubuntu jammy main" >> /etc/apt/sources.list && apt update && DEBIAN_FRONTEND=noninteractive apt install libc6 -y && apt install -y g++-11
+echo "deb http://cz.archive.ubuntu.com/ubuntu jammy main" >> /etc/apt/sources.list && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install libc6 -y && apt-get install -y g++-11
 
 ubuntu-drivers install
 
