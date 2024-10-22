@@ -97,7 +97,7 @@ pub fn deploy_to_ip(
         let _output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
         // perform remote shell script /opt/omni-gpu-agent/zk-ins.sh
         // let cmd = "/opt/omni-gpu-agent/zk-ins.sh";
-        let cmd = format!("/opt/machine/zk-ins.sh {} {}", ver, addr);
+        let cmd = format!("/opt/res/machine/zk-ins.sh {} {}", ver, addr);
         let _output = run_command(&ip, 22, "root", &pwd, &cmd, timeout_seconds)?;
 
         // this will be a long time depends on target machine network
@@ -248,7 +248,7 @@ mod tests {
     fn test_deploy_to_ip() {
         init_logger();
 
-        let ip = "192.168.187.73";
+        let ip = "192.168.187.90";
         let timeout_seconds = 10;
 
         let rt = Runtime::new().unwrap();
