@@ -69,7 +69,13 @@ impl From<&str> for MachineInfo {
 
 pub type AsyncOpType<T> = Pin<Box<dyn Future<Output = Result<T, AgentError>> + Send>>;
 
-pub fn deploy_to_ip(ip: &str, pwd: &str, timeout_seconds: u64) -> AsyncOpType<()> {
+pub fn deploy_to_ip(
+    ip: &str,
+    pwd: &str,
+    ver: &str,
+    addr: &str,
+    timeout_seconds: u64,
+) -> AsyncOpType<()> {
     let ip = ip.to_string();
     let pwd = pwd.to_string();
 
@@ -88,8 +94,9 @@ pub fn deploy_to_ip(ip: &str, pwd: &str, timeout_seconds: u64) -> AsyncOpType<()
         let cmd = "tar -xvzf /opt/omni-gpu-agent.tgz -C /opt";
         let _output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
         // perform remote shell script /opt/omni-gpu-agent/zk-ins.sh
-        let cmd = "/opt/omni-gpu-agent/zk-ins.sh";
-        let _output = run_command(&ip, 22, "root", &pwd, cmd, timeout_seconds)?;
+        // let cmd = "/opt/omni-gpu-agent/zk-ins.sh";
+        let cmd = format!("/opt/omni-gpu-agent/zk-ins.sh {} {}", ver, addr);
+        let _output = run_command(&ip, 22, "root", &pwd, &cmd, timeout_seconds)?;
 
         // this will be a long time depends on target machine network
 
@@ -178,6 +185,8 @@ pub async fn batch_scan(
 pub async fn batch_deploy(
     ip: &str,
     pwd: &str,
+    ver: &str,
+    addr: &str,
     runtime_handle: &tokio::runtime::Handle,
 ) -> Result<(), AgentError> {
     let ip_prefix = ip.split('.').take(3).collect::<Vec<&str>>().join(".");
@@ -185,7 +194,11 @@ pub async fn batch_deploy(
     for i in 1..256 {
         let ip = format!("{}.{}", ip_prefix, i);
         let pwd = pwd.to_string();
-        handles.push(runtime_handle.spawn(async move { deploy_to_ip(&ip, &pwd, 5).await }));
+        let ver = ver.to_string();
+        let addr = addr.to_string();
+        handles.push(
+            runtime_handle.spawn(async move { deploy_to_ip(&ip, &pwd, &ver, &addr, 5).await }),
+        );
     }
 
     let _result = futures::future::join_all(handles).await;
@@ -237,7 +250,13 @@ mod tests {
         let timeout_seconds = 10;
 
         let rt = Runtime::new().unwrap();
-        let result = rt.block_on(deploy_to_ip(ip, "123456.", timeout_seconds));
+        let result = rt.block_on(deploy_to_ip(
+            ip,
+            "123456.",
+            "0.2.3",
+            "aleo1spkkxewxj2dl2lgdps9xr28093p5nxsvjv55g2unmqfu0hmwyuysmf4qp3",
+            timeout_seconds,
+        ));
         info!("result: {:?}", result);
 
         assert!(result.is_ok());
